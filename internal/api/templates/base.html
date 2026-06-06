@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>animark — anime tracker</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #0f0f14;
+            --surface: #1a1a24;
+            --surface2: #252535;
+            --border: #2e2e42;
+            --text: #e0e0f0;
+            --text2: #8888aa;
+            --accent: #7c5cfc;
+            --accent-hover: #9b7cff;
+            --green: #4ade80;
+            --blue: #60a5fa;
+            --red: #f87171;
+            --yellow: #facc15;
+            --radius: 10px;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        .container { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+        nav {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 0;
+            position: sticky; top: 0; z-index: 100;
+            backdrop-filter: blur(8px);
+        }
+        nav .container { display: flex; align-items: center; gap: 24px; }
+        nav .logo { font-size: 1.3rem; font-weight: 700; color: var(--accent); text-decoration: none; }
+        nav a { color: var(--text2); text-decoration: none; font-size: 0.9rem; padding: 4px 0; }
+        nav a:hover, nav a.active { color: var(--text); }
+        nav a.active { border-bottom: 2px solid var(--accent); }
+        nav .spacer { flex: 1; }
+        nav form { display: flex; gap: 8px; }
+        nav input {
+            background: var(--surface2); border: 1px solid var(--border); border-radius: 6px;
+            padding: 6px 12px; color: var(--text); font-size: 0.9rem; width: 220px; outline: none;
+        }
+        nav input:focus { border-color: var(--accent); }
+        nav button {
+            background: var(--accent); border: none; border-radius: 6px;
+            padding: 6px 14px; color: white; cursor: pointer; font-size: 0.9rem;
+        }
+        nav button:hover { background: var(--accent-hover); }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 16px;
+            padding: 20px 0;
+        }
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            transition: transform 0.15s, box-shadow 0.15s;
+            cursor: pointer;
+            position: relative;
+        }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+        .card img {
+            width: 100%; aspect-ratio: 3/4; object-fit: cover;
+            display: block; background: var(--surface2);
+        }
+        .card .info { padding: 10px 12px; }
+        .card .info h3 { font-size: 0.85rem; font-weight: 600; line-height: 1.3; }
+        .card .info .sub { font-size: 0.75rem; color: var(--text2); margin-top: 4px; }
+        .filters {
+            display: flex; gap: 8px; padding: 16px 0 0; flex-wrap: wrap;
+        }
+        .filters a {
+            font-size: 0.8rem; padding: 4px 14px; border-radius: 20px;
+            background: var(--surface); border: 1px solid var(--border);
+            color: var(--text2); text-decoration: none;
+        }
+        .filters a:hover, .filters a.active {
+            background: var(--accent); color: white; border-color: var(--accent);
+        }
+        .stats-bar {
+            display: flex; gap: 20px; padding: 16px 0; flex-wrap: wrap;
+            font-size: 0.85rem;
+        }
+        .stats-bar span { color: var(--text2); }
+        .stats-bar strong { color: var(--text); }
+        .detail {
+            display: flex; gap: 28px; padding: 28px 0; flex-wrap: wrap;
+        }
+        .detail .poster { flex: 0 0 260px; }
+        .detail .poster img { width: 100%; border-radius: var(--radius); }
+        .detail .meta { flex: 1; min-width: 280px; }
+        .detail .meta h1 { font-size: 1.6rem; margin-bottom: 4px; }
+        .detail .meta .alt-title { color: var(--text2); font-size: 0.95rem; margin-bottom: 16px; }
+        .detail .meta .desc { color: var(--text2); line-height: 1.7; margin-bottom: 20px; font-size: 0.9rem; }
+        .detail .meta .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+        .detail .meta .tags span {
+            background: var(--surface2); padding: 2px 10px; border-radius: 20px;
+            font-size: 0.75rem; color: var(--text2);
+        }
+        .status-select {
+            display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0;
+        }
+        .status-select a {
+            font-size: 0.8rem; padding: 8px 16px; border-radius: 8px;
+            border: 1px solid var(--border); background: var(--surface);
+            color: var(--text); cursor: pointer; text-decoration: none;
+        }
+        .status-select a:hover, .status-select .active {
+            background: var(--accent) !important; color: white !important; border-color: var(--accent) !important;
+        }
+        .search-results { padding: 20px 0; }
+        .search-results .empty { color: var(--text2); text-align: center; padding: 40px; }
+        .page-heading { padding: 20px 0 0; font-size: 1.3rem; font-weight: 600; }
+        .text-center { text-align: center; }
+        .stat-chart { margin: 12px 0 24px; }
+        .stat-row { display: flex; align-items: center; gap: 12px; margin: 6px 0; }
+        .stat-label { min-width: 110px; font-size: 0.8rem; color: var(--text2); }
+        .stat-bar-bg { flex: 1; height: 10px; background: var(--surface2); border-radius: 5px; overflow: hidden; }
+        .stat-bar-fill { height: 100%; border-radius: 5px; transition: width 0.3s; min-width: 0; }
+        .stat-count { min-width: 30px; text-align: right; font-size: 0.8rem; color: var(--text); }
+        @media (max-width: 640px) {
+            nav .container { flex-wrap: wrap; gap: 12px; }
+            nav input { width: 100%; }
+            nav form { flex: 1; }
+            .grid { grid-template-columns: repeat(2, 1fr); }
+            .detail .poster { flex: 0 0 140px; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="container">
+            <a href="/" class="logo">animark</a>
+            <a href="/" class="{{if eq .ActiveTab "library"}}active{{end}}">Library</a>
+            <a href="/seasonal" class="{{if eq .ActiveTab "seasonal"}}active{{end}}">Seasonal</a>
+            <a href="/top" class="{{if eq .ActiveTab "top"}}active{{end}}">🔥 Top</a>
+            <a href="/stats" class="{{if eq .ActiveTab "stats"}}active{{end}}">📊 Stats</a>
+            <a href="/search" class="{{if eq .ActiveTab "search"}}active{{end}}">Search</a>
+            <div class="spacer"></div>
+            <form action="/search" method="GET">
+                <input type="text" name="q" placeholder="Search anime...">
+                <button type="submit">Search</button>
+            </form>
+        </div>
+    </nav>
+    <div class="container">
+        {{.Content}}
+    </div>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+</body>
+</html>

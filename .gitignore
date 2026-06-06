@@ -1,0 +1,21 @@
+# Build artifacts
+/animark
+*.exe
+*.test
+*.out
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Test data
+testdata/
+testdata2/
+
+# Runtime data
+data/
+
+# Go
+vendor/
