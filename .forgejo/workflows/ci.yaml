@@ -1,0 +1,48 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
+          cache: true
+
+      - name: Lint
+        run: go vet ./...
+
+      - name: Run tests
+        run: go test -v -count=1 ./...
+
+      - name: Install Docker CLI
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq docker.io
+          docker --version
+
+      - name: Login to Forgejo Container Registry
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | \
+            docker login git.827482.xyz -u xvantz --password-stdin
+
+      - name: Build and push Docker image
+        run: |
+          VERSION=$(git describe --tags --always 2>/dev/null || echo "dev")
+          echo "Building version: ${VERSION}"
+          docker build \
+            -t git.827482.xyz/xvantz/animark:${VERSION} \
+            -t git.827482.xyz/xvantz/animark:latest .
+          docker push git.827482.xyz/xvantz/animark:${VERSION}
+          docker push git.827482.xyz/xvantz/animark:latest
